@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Price Predictor 🚗</title>
+  <style>
+    /* ====== Global Styles ====== */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1d3557, #457b9d);
+      color: #f1faee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #ffffff;
+      color: #1d3557;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+      color: #e63946;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 600;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    select:focus, input:focus {
+      border-color: #457b9d;
+      box-shadow: 0 0 8px rgba(69, 123, 157, 0.5);
+    }
+
+    button {
+      background: #1d3557;
+      color: #f1faee;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #457b9d;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #e63946;
+      animation: fadeIn 1s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Car Price Predictor 🚗</h1>
+    <form id="predictionForm">
+      <label for="company">Select Company</label>
+      <select id="company" required>
+        <option value="">-- Select Company --</option>
+      </select>
+
+      <label for="name">Select Car Name</label>
+      <select id="name" required>
+        <option value="">-- Select Car --</option>
+      </select>
+
+      <label for="year">Year of Manufacture</label>
+      <input type="number" id="year" placeholder="e.g. 2018" required min="1980" max="2025">
+
+      <label for="kms_driven">Kilometers Driven</label>
+      <input type="number" id="kms_driven" placeholder="e.g. 45000" required>
+
+      <label for="fuel_type">Fuel Type</label>
+      <select id="fuel_type" required>
+        <option value="">-- Select Fuel Type --</option>
+        <option value="Diesel">Diesel</option>
+        <option value="Petrol">Petrol</option>
+      </select>
+
+      <button type="submit">Predict Price</button>
+    </form>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const companySelect = document.getElementById("company");
+    const nameSelect = document.getElementById("name");
+    const form = document.getElementById("predictionForm");
+    const resultDiv = document.getElementById("result");
+
+    // Load companies on page load
+    window.onload = async () => {
+      const res = await fetch("http://127.0.0.1:8000/company");
+const data = await res.json();
+data.company.forEach(c => {
+  let option = document.createElement("option");
+  option.value = c;
+  option.textContent = c;
+  companySelect.appendChild(option);
+});
+    };
+
+    // Load car names when company is selected
+    companySelect.addEventListener("change", async () => {
+      nameSelect.innerHTML = "<option value=''>-- Select Car --</option>";
+      if (companySelect.value) {
+        const res = await fetch(`http://127.0.0.1:8000/name/${companySelect.value}`);
+        const data = await res.json();
+        data.name.forEach(n => {
+          let option = document.createElement("option");
+          option.value = n;
+          option.textContent = n;
+          nameSelect.appendChild(option);
+        });
+      }
+    });
+
+    // Handle form submission
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        name: nameSelect.value,
+        company: companySelect.value,
+        year: parseInt(document.getElementById("year").value),
+        kms_driven: parseInt(document.getElementById("kms_driven").value),
+        fuel_type: document.getElementById("fuel_type").value
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      resultDiv.textContent = `Predicted Price: ₹ ${data.Prediction.toLocaleString()}`;
+    });
+  </script>
+
+</body>
+</html>
